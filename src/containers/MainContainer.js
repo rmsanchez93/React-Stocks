@@ -1,31 +1,71 @@
-import React, { Component } from 'react';
-import StockContainer from './StockContainer'
-import PortfolioContainer from './PortfolioContainer'
-import SearchBar from '../components/SearchBar'
+import React, { useState, useEffect } from "react";
+import StockContainer from "./StockContainer";
+import PortfolioContainer from "./PortfolioContainer";
+import SearchBar from "../components/SearchBar";
 
-class MainContainer extends Component {
+const MainContainer = () => {
+  const [stocks, setStocks] = useState([]);
+  const [portfolio, setPortfolio] = useState([]);
+  const [sort, setSort] = useState("none");
+  const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
 
-  render() {
-    return (
-      <div>
-        <SearchBar/>
+  useEffect(() => {
+    fetch("http://localhost:3000/stocks")
+      .then((resp) => resp.json())
+      .then((stocks) => setStocks(stocks));
+  }, []);
 
-          <div className="row">
-            <div className="col-8">
+  const handleRemoveStock = (stock) => {
+    setPortfolio(portfolio.filter((port) => port !== stock));
+  };
 
-              <StockContainer/>
+  const displayStocks = () => {
+    let newStocks = stocks;
 
-            </div>
-            <div className="col-4">
+    if (sort !== "none") {
+      sort === "Alphabetically"
+        ? (newStocks = newStocks.sort((a, b) => (a.name > b.name ? 1 : -1)))
+        : (newStocks = newStocks.sort((a, b) => (a.price < b.price ? 1 : -1)));
+    }
 
-              <PortfolioContainer/>
+    if (filter !== "all") {
+      newStocks = newStocks.filter((stock) => stock.type === filter);
+    }
 
-            </div>
-          </div>
-      </div>
+    newStocks = newStocks.filter((stock) =>
+      stock.name.toLowerCase().includes(query.toLowerCase())
     );
-  }
 
-}
+    return newStocks;
+  };
+
+  return (
+    <div>
+      <SearchBar
+        sort={sort}
+        setSort={setSort}
+        setFilter={setFilter}
+        query={query}
+        setQuery={setQuery}
+      />
+      <div className="row">
+        <div className="col-8">
+          <StockContainer
+            stocks={displayStocks()}
+            setPortfolio={setPortfolio}
+            portfolio={portfolio}
+          />
+        </div>
+        <div className="col-4">
+          <PortfolioContainer
+            portfolio={portfolio}
+            handleRemoveStock={handleRemoveStock}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default MainContainer;
